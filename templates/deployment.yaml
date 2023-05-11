@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "uptime.fullname" . }}
+  labels:
+    {{- include "uptime.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "uptime.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "uptime.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "uptime.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ include "uptime.fullname" . }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: TICKSPEED
+              value: {{ .Values.uptime.tickspeed | quote }}
+            - name: INPUT
+              value: {{ .Values.uptime.input | quote }}
+            - name: OUTPUT
+              value: {{ .Values.uptime.output | quote }}
+            {{- range $key, $value := .Values.uptime.variables }}
+            - name: {{- $key | quote | upper }}
+              value: {{- $value | quote }}
+            {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
